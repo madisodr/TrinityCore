@@ -16,5 +16,7 @@
  */
 
 // This is where scripts' loading functions should be declared:
+void AddSC_Ares();
 void AddCustomScripts() {
+    AddSC_Ares();
 }
