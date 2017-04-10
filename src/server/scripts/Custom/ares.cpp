@@ -4,6 +4,7 @@
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "Hyperion.h"
 
 using namespace std;
 
