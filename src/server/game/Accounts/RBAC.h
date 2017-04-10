@@ -757,8 +757,11 @@ enum RBACPermissions
     RBAC_PERM_COMMAND_RELOAD_SCENE_TEMPLATE                  = 850,
     RBAC_PERM_COMMAND_RELOAD_AREATRIGGER_TEMPLATE            = 851,
     RBAC_PERM_COMMAND_GO_OFFSET                              = 852,
-
+    
     // custom permissions 1000+
+    RBAC_PERM_COMMAND_ARES_ROLL = 1001,
+    RBAC_PERM_COMMAND_ARES_VIEW = 1002,
+
     RBAC_PERM_MAX
 };
 
