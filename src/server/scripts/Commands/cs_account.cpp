@@ -37,20 +37,20 @@ public:
     {
         static std::vector<ChatCommand> accountSetSecTable =
         {
-            { "regmail",        rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_SEC_REGMAIL, true,  &HandleAccountSetRegEmailCommand,  ""       },
-            { "email",          rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_SEC_EMAIL,   true,  &HandleAccountSetEmailCommand,     ""       },
+            { "regmail",        rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_SEC_REGMAIL, true,  &HandleAccountSetRegEmailCommand,  ""             },
+            { "email",          rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_SEC_EMAIL,   true,  &HandleAccountSetEmailCommand,     ""             },
         };
         static std::vector<ChatCommand> accountSetCommandTable =
         {
-            { "addon",          rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_ADDON,       true,  &HandleAccountSetAddonCommand,     ""       },
-            { "sec",            rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_SEC,         true,  NULL,                "", accountSetSecTable },
-            { "gmlevel",        rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_GMLEVEL,     true,  &HandleAccountSetGmLevelCommand,   ""       },
-            { "password",       rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_PASSWORD,    true,  &HandleAccountSetPasswordCommand,  ""       },
+            { "addon",          rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_ADDON,       true,  &HandleAccountSetAddonCommand,     ""             },
+            { "sec",            rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_SEC,         true,  NULL,                "", accountSetSecTable       },
+            { "gmlevel",        rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_GMLEVEL,     true,  &HandleAccountSetGmLevelCommand,   ""             },
+            { "password",       rbac::RBAC_PERM_COMMAND_ACCOUNT_SET_PASSWORD,    true,  &HandleAccountSetPasswordCommand,  ""             },
         };
         static std::vector<ChatCommand> accountLockCommandTable =
         {
-            { "country",        rbac::RBAC_PERM_COMMAND_ACCOUNT_LOCK_COUNTRY,    false,  &HandleAccountLockCountryCommand,  ""      },
-            { "ip",             rbac::RBAC_PERM_COMMAND_ACCOUNT_LOCK_IP,         false,  &HandleAccountLockIpCommand,       ""      },
+            { "country",        rbac::RBAC_PERM_COMMAND_ACCOUNT_LOCK_COUNTRY,    false,  &HandleAccountLockCountryCommand,  ""            },
+            { "ip",             rbac::RBAC_PERM_COMMAND_ACCOUNT_LOCK_IP,         false,  &HandleAccountLockIpCommand,       ""            },
         };
         static std::vector<ChatCommand> accountCommandTable =
         {
@@ -223,11 +223,44 @@ public:
     }
 
     /// Display info on users currently in the realm
-    static bool HandleAccountOnlineListCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleAccountOnlineListCommand(ChatHandler* handler, char const* args)
     {
-        ///- Get the list of accounts ID logged to the realm
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ONLINE);
+        PreparedStatement* stmt;
 
+        uint8 idx = 0;
+        char* climit;
+        char* cid;
+        int16 id = -1;
+
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ONLINE);
+        if(*args) {
+            char* op = strtok((char*) args, " ");
+            if (strcmp(op, "map") == 0) {
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ONLINE_BY_MAP);
+                cid = strtok(NULL, " ");
+                climit = strtok(NULL, " ");
+            }
+            else if (strcmp(op, "zone") == 0)
+            {
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ONLINE_BY_ZONE);
+                cid = strtok(NULL, " ");
+                climit = strtok(NULL, " ");
+            } else {
+                climit = op;
+            }
+        }
+
+        if(cid) {
+            id = strtol(cid, NULL, 10);
+            stmt->setInt16(idx, id);
+            idx++;
+        }
+
+        uint16 limit = 1000;
+        if (climit)
+            limit = strtol(climit, NULL, 10);
+
+        stmt->setUInt16(idx, limit);
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
         if (!result)
@@ -240,7 +273,6 @@ public:
         handler->SendSysMessage(LANG_ACCOUNT_LIST_BAR_HEADER);
         handler->SendSysMessage(LANG_ACCOUNT_LIST_HEADER);
         handler->SendSysMessage(LANG_ACCOUNT_LIST_BAR);
-
         ///- Cycle through accounts
         do
         {
