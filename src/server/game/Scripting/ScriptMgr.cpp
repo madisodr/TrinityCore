@@ -2215,6 +2215,29 @@ void ScriptMgr::OnPlayerLogin(Player* player, bool firstLogin)
     FOREACH_SCRIPT(PlayerScript)->OnLogin(player, firstLogin);
 }
 
+/* HYPERION CORE CODE BLOCK */
+void ScriptMgr::OnPlayerUpdate(Player* player, time_t now) {
+    FOREACH_SCRIPT(PlayerScript)->OnUpdate(player, now);
+}
+
+void ScriptMgr::OnPlayerDismount(Player* player, uint32 entry) {
+    FOREACH_SCRIPT(PlayerScript)->OnDismount(player, entry);
+}
+
+void ScriptMgr::OnPlayerMount(Player* player) {
+    FOREACH_SCRIPT(PlayerScript)->OnMount(player);
+}
+
+void ScriptMgr::OnGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) {
+    FOREACH_SCRIPT(PlayerScript)->OnGossipSelect(player, menu_id, sender, action);
+}
+
+void ScriptMgr::OnGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, const char* code) {
+    FOREACH_SCRIPT(PlayerScript)->OnGossipSelectCode(player, menu_id, sender, action, code);
+}
+
+/* End core code block */
+
 void ScriptMgr::OnPlayerLogout(Player* player)
 {
     FOREACH_SCRIPT(PlayerScript)->OnLogout(player);

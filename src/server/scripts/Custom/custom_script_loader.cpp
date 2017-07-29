@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,10 +16,24 @@
  */
 
 // This is where scripts' loading functions should be declared:
+void AddSC_Ares();
+void AddSC_Athena();
+void AddSC_Generator();
+void AddSC_Grimoire();
+void AddSC_Helios();
+void AddSC_Janus();
+void AddSC_OOCChat();
+void AddSC_Pegasus();
+void AddSC_Prometheus();
 
-
-// The name of this function should match:
-// void Add${NameOfDirectory}Scripts()
-void AddCustomScripts()
-{
+void AddCustomScripts() {
+	AddSC_Ares();
+    AddSC_Athena();
+    AddSC_Generator();
+    AddSC_Grimoire();
+	AddSC_Helios();
+	AddSC_Janus();
+	AddSC_OOCChat();
+	AddSC_Pegasus();
+	AddSC_Prometheus();
 }

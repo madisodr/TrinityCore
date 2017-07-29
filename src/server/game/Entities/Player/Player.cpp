@@ -1070,6 +1070,7 @@ void Player::Update(uint32 p_time)
     SetCanDelayTeleport(false);
 
     time_t now = time(nullptr);
+    sScriptMgr->OnPlayerUpdate(this, now);
 
     UpdatePvPFlag(now);
 

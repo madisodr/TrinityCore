@@ -7736,6 +7736,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
 
     if (Player* player = ToPlayer())
     {
+        sScriptMgr->OnPlayerMount(player);
         // mount as a vehicle
         if (VehicleId)
         {
@@ -7771,6 +7772,9 @@ void Unit::Dismount()
     if (!IsMounted())
         return;
 
+    if (Player* player = ToPlayer())
+        sScriptMgr->OnPlayerDismount(player, this->GetMountID());
+
     SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, 0);
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT);
 
@@ -7802,6 +7806,7 @@ void Unit::Dismount()
         }
         else
             player->ResummonPetTemporaryUnSummonedIfAny();
+
     }
 }
 

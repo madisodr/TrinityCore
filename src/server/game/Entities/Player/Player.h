@@ -2339,6 +2339,18 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         uint32 GetCurrentTrainerId() const { return _currentTrainerId; }
         void SetCurrentTrainerId(uint32 trainerId) { _currentTrainerId = trainerId; }
+
+        /* HYPERION CODE */
+        /* Pegasus */
+        TempSummon* m_pegasus_mount;
+        TempSummon* GetPegasusMount() { return m_pegasus_mount; }
+        void SetPegasusMount(TempSummon* t) { m_pegasus_mount = t; }
+
+        bool IsSeeingOOCChat;
+        inline void toggleOOCChat(bool hard = false, bool on = false) { !hard ? IsSeeingOOCChat = !IsSeeingOOCChat : IsSeeingOOCChat = on; }
+
+        uint32 AthenaSpawnEntry;
+        inline void SetAthenaSpawnEntry( uint32 id ) { AthenaSpawnEntry = id; }
     protected:
         // Gamemaster whisper whitelist
         GuidList WhisperList;

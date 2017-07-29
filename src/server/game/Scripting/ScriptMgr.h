@@ -386,6 +386,11 @@ class TC_GAME_API ItemScript : public ScriptObject
 
         // Called when the item is destroyed.
         virtual bool OnRemove(Player* /*player*/, Item* /*item*/) { return false; }
+
+        // Called when a player selections an ossip in an item gossip window
+        virtual bool OnGossipSelect(Player* /*player*/, Item* /*item*/, uint32 /*sender*/, uint32 /*action*/){ return false; }
+        // Called when a player selections an ossip in an item gossip window
+        virtual bool OnGossipSelectCode(Player* /*player*/, Item* /*item*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/){ return false; }
 };
 
 class TC_GAME_API UnitScript : public ScriptObject
@@ -753,6 +758,19 @@ class TC_GAME_API PlayerScript : public UnitScript
 
         // Called when a player completes a movie
         virtual void OnMovieComplete(Player* /*player*/, uint32 /*movieId*/) { }
+
+        // Called when a player mounts
+        virtual void OnMount(Player* /*player*/) { }
+
+        // Called when a player dismounts
+        virtual void OnDismount(Player* /*player*/, uint32 /*entry*/) { }
+
+        // Called on player update
+        virtual void OnUpdate(Player* /*player*/, time_t /*now*/) { }
+        // Called when a player selects an option in a player gossip window
+        virtual void OnGossipSelect(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/) { }
+        // Called when a player selects an option in a player gossip window
+        virtual void OnGossipSelectCode(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { }
 };
 
 class TC_GAME_API AccountScript : public ScriptObject
@@ -1115,6 +1133,11 @@ class TC_GAME_API ScriptMgr
         void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent, uint8 extendState);
         void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
         void OnQuestStatusChange(Player* player, uint32 questId);
+        void OnPlayerDismount(Player* player, uint32 entry);
+        void OnPlayerMount(Player* player);
+        void OnPlayerUpdate(Player* player, time_t now);
+        void OnGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action);
+        void OnGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, const char* code);
         void OnMovieComplete(Player* player, uint32 movieId);
 
     public: /* AccountScript */
