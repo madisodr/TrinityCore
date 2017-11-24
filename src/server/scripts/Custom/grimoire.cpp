@@ -23,7 +23,7 @@
 #define UNCOMMON_REQUEST_COUNT 20
 const char* GRIMOIRE_LOAD = "SELECT spell_id FROM grimoire WHERE item='%u'";
 const char* ERROR_INVALID_ITEM = "Invalid item";
-const char* ERROR_QUALITY_NOW_ALLOWED = "You can't request items fo this quality.";
+const char* ERROR_QUALITY_NOW_ALLOWED = "You can't request items of this quality.";
 const char* ERROR_NOT_ENOUGH_COINS = "You do not have enough coins.";
 const char* ERROR_ITEM_TYPE = "You can't request this type of item.";
 const char* GRIMOIRE_UPDATE_CHARACTER = "UPDATE character_requests SET amount = amount - 1 WHERE guid='%u'";
