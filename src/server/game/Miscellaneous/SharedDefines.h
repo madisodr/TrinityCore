@@ -90,6 +90,30 @@ enum Expansions
 
 #define CURRENT_EXPANSION EXPANSION_LEGION
 
+inline uint32 GetMaxLevelForExpansion(uint32 expansion)
+{
+    switch (expansion)
+    {
+        case EXPANSION_CLASSIC:
+            return 60;
+        case EXPANSION_THE_BURNING_CRUSADE:
+            return 70;
+        case EXPANSION_WRATH_OF_THE_LICH_KING:
+            return 80;
+        case EXPANSION_CATACLYSM:
+            return 85;
+        case EXPANSION_MISTS_OF_PANDARIA:
+            return 90;
+        case EXPANSION_WARLORDS_OF_DRAENOR:
+            return 100;
+        case EXPANSION_LEGION:
+            return 110;
+        default:
+            break;
+    }
+    return 0;
+}
+
 enum Gender
 {
     GENDER_UNKNOWN                     = -1,
@@ -762,7 +786,7 @@ enum SpellAttr11
     SPELL_ATTR11_SCALES_WITH_ITEM_LEVEL          = 0x00000004, //  2
     SPELL_ATTR11_UNK3                            = 0x00000008, //  3
     SPELL_ATTR11_UNK4                            = 0x00000010, //  4
-    SPELL_ATTR11_ABSORB_FALL_DAMAGE              = 0x00000020, //  5
+    SPELL_ATTR11_ABSORB_ENVIRONMENTAL_DAMAGE     = 0x00000020, //  5
     SPELL_ATTR11_UNK6                            = 0x00000040, //  6
     SPELL_ATTR11_RANK_IGNORES_CASTER_LEVEL       = 0x00000080, //  7 Spell_C_GetSpellRank returns SpellLevels->MaxLevel * 5 instead of std::min(SpellLevels->MaxLevel, caster->Level) * 5
     SPELL_ATTR11_UNK8                            = 0x00000100, //  8
@@ -1091,7 +1115,7 @@ enum SpellEffectName
     SPELL_EFFECT_THREAT                             = 63,
     SPELL_EFFECT_TRIGGER_SPELL                      = 64,
     SPELL_EFFECT_APPLY_AREA_AURA_RAID               = 65,
-    SPELL_EFFECT_CREATE_MANA_GEM                    = 66,
+    SPELL_EFFECT_RECHARGE_ITEM                      = 66,
     SPELL_EFFECT_HEAL_MAX_HEALTH                    = 67,
     SPELL_EFFECT_INTERRUPT_CAST                     = 68,
     SPELL_EFFECT_DISTRACT                           = 69,
@@ -4586,7 +4610,7 @@ enum DiminishingReturnsType
 };
 
 // Diminishing Return Groups
-enum DiminishingGroup
+enum DiminishingGroup : uint16
 {
     DIMINISHING_NONE             = 0,
     DIMINISHING_ROOT             = 1,
@@ -4597,6 +4621,8 @@ enum DiminishingGroup
     DIMINISHING_AOE_KNOCKBACK    = 6,
     DIMINISHING_TAUNT            = 7,
     DIMINISHING_LIMITONLY        = 8,
+
+    DIMINISHING_MAX
 };
 
 enum SummonCategory
@@ -4845,7 +4871,7 @@ enum MailResponseResult
     MAIL_ERR_ITEM_HAS_EXPIRED          = 21
 };
 
-enum SpellFamilyNames
+enum SpellFamilyNames : uint8
 {
     SPELLFAMILY_GENERIC         = 0,
     SPELLFAMILY_EVENTS          = 1,                            // events, holidays
