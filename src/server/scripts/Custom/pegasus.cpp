@@ -11,21 +11,18 @@
 
 const char* PEGASUS_SELECT_ENTRY = "SELECT entry, spawn_entry FROM pegasus";
 
-struct PegasusMount {
-    uint32 entry;
-    uint32 spawnId;
-};
-
 enum GossipOptions {
-    DISMISS = 5,
-    STAY = 10,
-    FOLLOW = 15,
-    BANK = 20,
-    EXIT = 25
+    DISMISS,
+    STAY,
+    FOLLOW,
+    BANK,
+    EXIT
 };
 
+// container to hold mount data loaded from DB.
+// static std::map<<entry, spawnid> mounts;
+static std::unordered_map<uint32, uint32> mounts;
 
-static std::vector<PegasusMount*> mounts;
 class PegasusLoader : public WorldScript {
 
     public:
@@ -37,26 +34,22 @@ class PegasusLoader : public WorldScript {
 
         void LoadMounts() {
             QueryResult r = WorldDatabase.PQuery(PEGASUS_SELECT_ENTRY);
-            if (!r)
-                return;
+            if (r) {
+                Field* field;
+                do {
+                    field = r->Fetch();
+                    mounts.insert(std::make_pair<uint32, uint32>(field[0].GetUInt32(), field[1].GetUInt32()));
+                } while (r->NextRow());
+            }
+        }
 
-            Field* field;
-            do {
-                field = r->Fetch();
-                PegasusMount* mount = new PegasusMount;
-
-                mount->entry = field[0].GetUInt32();
-                mount->spawnId = field[1].GetUInt32();
-
-                mounts.push_back(mount);
-            } while (r->NextRow());
+        void ReloadMounts() {
+            mounts.clear();
+            LoadMounts();
         }
 };
 
-
-
-class
-PegasusHandler : public PlayerScript {
+class PegasusHandler : public PlayerScript {
 
     public:
         PegasusHandler() : PlayerScript( "pegasus_handler" ) {}
@@ -71,26 +64,21 @@ PegasusHandler : public PlayerScript {
         }
 
         void OnMount(Player* player) {
-
             UnsummonMountFromWorld(player);
         }
 
         void OnDismount(Player* player, uint32 entry) {
-            TempSummon* summon;
-            for (int i = 0; i < mounts.size(); i++) {
-                if (mounts[i]->entry == entry) {
-                    summon = player->SummonCreature(mounts[i]->spawnId, player->GetPositionX() + 5, player->GetPositionY() + 5, player->GetPositionZ() + 1);
-                    player->SetPegasusMount(summon);
-                    summon->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, summon->GetFollowAngle());
-                    break;
-                }
-            }
+            // no duplicate mounts
+            UnsummonMountFromWorld(player);
+
+            TempSummon* summon = player->SummonCreature(mounts[entry], player->GetPositionX() + 5, player->GetPositionY() + 5, player->GetPositionZ() + 1);
+            player->SetPegasusMount(summon);
+            summon->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, summon->GetFollowAngle());
         }
 
         void OnLogout(Player* player) {
             UnsummonMountFromWorld(player);
         }
-
 };
 
 class PegasusGossip : public CreatureScript {
@@ -113,8 +101,9 @@ class PegasusGossip : public CreatureScript {
 
         bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) {
             ClearGossipMenuFor(player);
-            if(player->GetPegasusMount() == NULL)
+            if(player->GetPegasusMount() == NULL) {
                 return false;
+            }
 
             switch(action) {
                 case DISMISS:

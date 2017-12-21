@@ -13,14 +13,88 @@
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
 #include "WorldSession.h"
+#include <unordered_map>
 
 #define JANUS_OBJECT 540120
 
-const char* JANUS_LOAD = "SELECT map, x, y, z, o FROM janus WHERE guid='%u' LIMIT 1";
-const char* JANUS_LOOKUP = "SELECT objectID FROM janus WHERE guid='%u'";
-const char* JANUS_UPDATE = "UPDATE janus SET map='%u', x='%f', y='%f', o='%f', WHERE guid='%u'";
-const char* JANUS_INSERT = "INSERT INTO janus (guid, map, x, y, z, o) VALUES (%u, %u, %f, %f, %f)";
-const char* JANUS_DELETE = "DELETE FROM janus WHERE guid='%u'";
+const char* JANUS_LOAD     = "SELECT * FROM janus";
+const char* JANUS_LOAD_ONE = "SELECT map, x, y, z, o FROM janus WHERE guid='%u' LIMIT 1";
+const char* JANUS_LOOKUP   = "SELECT objectID FROM janus WHERE guid='%u'";
+const char* JANUS_UPDATE   = "UPDATE janus SET map='%u', x='%f', y='%f', o='%f', WHERE guid='%u'";
+const char* JANUS_INSERT   = "INSERT INTO janus (guid, map, x, y, z, o) VALUES (%u, %u, %f, %f, %f)";
+const char* JANUS_DELETE   = "DELETE FROM janus WHERE guid='%u'";
+
+class JanusCords {
+    public:
+        JanusCords(uint32 _map, float _x, float _y, float _z, float _o) {
+            this->map = _map;
+            this->x = _x;
+            this->y = _y;
+            this->z = _z;
+            this->o = _o;
+        }
+
+        void UpdateCords(uint32 _map, float _x, float _y, float _z, float _o) {
+            this->map = _map;
+            this->x = _x;
+            this->y = _y;
+            this->z = _z;
+            this->o = _o;
+        }
+
+        void FetchCords(uint32& _map, float& _x, float& _y, float& _z, float& _o) {
+            _map = this->map;
+            _x = this->x;
+            _y = this->y;
+            _z = this->z;
+            _o = this->o;
+        }
+
+    private:
+        uint32 map;
+        float x;
+        float y;
+        float z;
+        float o;
+};
+
+static std::unordered_map<uint32, JanusCords*> portal_map;
+
+class JanusLoader : public WorldScript {
+    public:
+        JanusLoader() : WorldScript("janus_loader") {}
+        void OnStartup() {
+            LoadJanus();
+        }
+
+        void LoadJanus() {
+            QueryResult r = WorldDatabase.PQuery(JANUS_LOAD);
+            if (r) {
+                Field* field;
+                do {
+                    field = r ->Fetch();
+                    uint32 guid = field[0].GetUInt32();
+                    uint32 map = field[1].GetUInt32();
+                    float x = field[2].GetFloat();
+                    float y = field[3].GetFloat();
+                    float z = field[4].GetFloat();
+                    float o = field[5].GetFloat();
+                    JanusCords* t = new JanusCords(map, x, y, z, o);
+                    std::pair<uint32, JanusCords*> newPair (guid, t);
+                    portal_map.insert(newPair);
+                } while (r->NextRow());
+            }
+        }
+
+        void ReloadJanus() {
+            for (auto& portal : portal_map) {
+                delete portal.second;
+            }
+
+            portal_map.clear();
+            LoadJanus();
+        }
+};
 
 class JanusCommandScript : public CommandScript {
     public:
@@ -72,14 +146,18 @@ class JanusCommandScript : public CommandScript {
             float o = player->GetOrientation();
             uint32 map = player->GetMapId();
 
-            QueryResult result = WorldDatabase.PQuery(JANUS_LOOKUP, guidLow);
-
-            if (result)
-                WorldDatabase.PExecute(JANUS_UPDATE, map, x, y, z, o, guidLow);
-            else
+            std::unordered_map<uint32, JanusCords*>::const_iterator it = portal_map.find(guidLow);
+            if (it == portal_map.end()) {
                 WorldDatabase.PExecute(JANUS_INSERT, guidLow, map, x, y, z, o);
+                JanusCords* t = new JanusCords(map, x, y, z, o);
+                portal_map.insert(std::make_pair<uint32, JanusCords*>((uint32)guidLow, (JanusCords*)t));
+                handler->PSendSysMessage("Portal %u has been linked at your location. Map[%u] x[%f] y[%f] z[%f] o[%f]", guidLow, map, x, y, z, o);
+            } else {
+                WorldDatabase.PExecute(JANUS_UPDATE, map, x, y, z, o, guidLow);
+                it->second->UpdateCords(map, x, y, z, 0);
+                handler->PSendSysMessage("Portal %u has been updated at your location. Map[%u] x[%f] y[%f] z[%f] o[%f]", guidLow, map, x, y, z, o);
+            }
 
-            handler->SendSysMessage("A link has been added at your location to the selected object.");
             return true;
         }
 
@@ -104,14 +182,13 @@ class JanusCommandScript : public CommandScript {
             }
 
             if (object->GetEntry() != JANUS_OBJECT) {
-                handler->PSendSysMessage("This is NOT aJanus Object. Please delete it as a regular gameobject.");
+                handler->PSendSysMessage("This is not a Janus portal object. Please delete it as a regular gameobject.");
                 handler->SetSentErrorMessage(true);
                 return false;
             }
 
             ObjectGuid ownerGuid = object->GetOwnerGUID();
-            if (!ownerGuid.IsEmpty())
-            {
+            if (!ownerGuid.IsEmpty()) {
                 Unit* owner = ObjectAccessor::GetUnit(*handler->GetSession()->GetPlayer(), ownerGuid);
                 if (!owner || !ownerGuid.IsPlayer()) {
                     handler->PSendSysMessage(LANG_COMMAND_DELOBJREFERCREATURE, ownerGuid.ToString().c_str(), object->GetGUID().ToString().c_str());
@@ -126,9 +203,17 @@ class JanusCommandScript : public CommandScript {
             object->Delete();
             object->DeleteFromDB();
 
-            WorldDatabase.PExecute(JANUS_DELETE, guidLow); // Delete the shit from janus' table.
-            handler->PSendSysMessage(LANG_COMMAND_DELOBJMESSAGE, object->GetGUID().ToString().c_str());
+            std::unordered_map<uint32, JanusCords*>::const_iterator it = portal_map.find(guidLow);
+            if (it == portal_map.end()) {
+                handler->PSendSysMessage("Portal %u has no portal data loaded.", guidLow);
+            } else {
+                delete it->second;
+                portal_map.erase(it);
+                handler->PSendSysMessage("Portal %u has been deleted.", guidLow);
+                WorldDatabase.PExecute(JANUS_DELETE, guidLow); // Delete the shit from janus' table.
+            }
 
+            handler->PSendSysMessage(LANG_COMMAND_DELOBJMESSAGE, object->GetGUID().ToString().c_str());
             return true;
         }
 };
@@ -137,22 +222,19 @@ class Janus : public GameObjectScript {
     public:
         Janus() : GameObjectScript("janus"){}
 
-        bool OnGossipHello( Player* player, GameObject* go ) {
+        bool OnGossipHello(Player* player, GameObject* go) {
             uint64 guid = go->GetSpawnId();
-            QueryResult result = WorldDatabase.PQuery(JANUS_LOAD, guid);
-            if (!result)
-                return false;
+            std::unordered_map<uint32, JanusCords*>::const_iterator it = portal_map.find(guid);
+            if (it != portal_map.end()) {
+                uint32 map;
+                float x, y, z, o;
+                JanusCords* t = it->second;
+                t->FetchCords(map, x, y, z, o);
+                player->TeleportTo(map, x, y, z, o);
+            } else {
+                ChatHandler(player->GetSession()).SendSysMessage("No portal information found. Please report this to a GM or admin with the following Gameobject ID: %u.", guid);
+            }
 
-            Field* fields = result->Fetch();
-            int idx = 0;
-            uint32 map = fields[idx].GetUInt32();
-            float x = fields[++idx].GetFloat();
-            float y = fields[++idx].GetFloat();
-            float z = fields[++idx].GetFloat();
-            float o = fields[++idx].GetFloat();
-
-            player->TeleportTo( map, x, y, z, o );
-            player->PlayerTalkClass->SendCloseGossip();
             return true;
         }
 };
