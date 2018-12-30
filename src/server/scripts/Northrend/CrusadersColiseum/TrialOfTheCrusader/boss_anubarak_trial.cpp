@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2006-2010 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ enum Yells
     SAY_AGGRO               = 1,
     EMOTE_SUBMERGE          = 2,
     EMOTE_BURROWER          = 3,
-    SAY_EMERGE              = 4,
+    EMOTE_EMERGE            = 4,
     SAY_LEECHING_SWARM      = 5,
     EMOTE_LEECHING_SWARM    = 6,
     SAY_KILL_PLAYER         = 7,
@@ -254,10 +254,10 @@ class boss_anubarak_trial : public CreatureScript
                         _burrowGUID.push_back(summoned->GetGUID());
                         summoned->SetReactState(REACT_PASSIVE);
                         summoned->CastSpell(summoned, SPELL_CHURNING_GROUND, false);
-                        summoned->SetDisplayId(summoned->GetCreatureTemplate()->Modelid2);
+                        summoned->SetDisplayFromModel(1);
                         break;
                     case NPC_SPIKE:
-                        summoned->SetDisplayId(summoned->GetCreatureTemplate()->Modelid1);
+                        summoned->SetDisplayFromModel(0);
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
                         {
                             summoned->CombatStart(target);
@@ -368,6 +368,7 @@ class boss_anubarak_trial : public CreatureScript
                             me->RemoveAurasDueToSpell(SPELL_SUBMERGE_ANUBARAK);
                             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                             DoCast(me, SPELL_EMERGE_ANUBARAK);
+                            Talk(EMOTE_EMERGE);
                             events.SetPhase(PHASE_MELEE);
                             events.ScheduleEvent(EVENT_FREEZE_SLASH, 15*IN_MILLISECONDS, 0, PHASE_MELEE);
                             events.ScheduleEvent(EVENT_PENETRATING_COLD, 20*IN_MILLISECONDS, PHASE_MELEE);
@@ -619,7 +620,7 @@ class npc_frost_sphere : public CreatureScript
             {
                 me->SetReactState(REACT_PASSIVE);
                 DoCast(SPELL_FROST_SPHERE);
-                me->SetDisplayId(me->GetCreatureTemplate()->Modelid2);
+                me->SetDisplayFromModel(1);
                 me->GetMotionMaster()->MoveRandom(20.0f);
             }
 

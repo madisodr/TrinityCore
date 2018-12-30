@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -603,7 +603,7 @@ enum RBACPermissions
     RBAC_PERM_COMMAND_RELOAD_SPELL_LOOT_TEMPLATE             = 695,
     RBAC_PERM_COMMAND_RELOAD_SPELL_LINKED_SPELL              = 696,
     RBAC_PERM_COMMAND_RELOAD_SPELL_PET_AURAS                 = 697,
-    // 698 - reuse
+    RBAC_PERM_COMMAND_CHARACTER_CHANGEACCOUNT                = 698,
     RBAC_PERM_COMMAND_RELOAD_SPELL_PROC                      = 699,
     RBAC_PERM_COMMAND_RELOAD_SPELL_SCRIPTS                   = 700,
     RBAC_PERM_COMMAND_RELOAD_SPELL_TARGET_POSITION           = 701,
@@ -771,7 +771,15 @@ enum RBACPermissions
     RBAC_PERM_COMMAND_GROUP_MAINASSIST                       = 864, // reserved
     RBAC_PERM_COMMAND_NPC_SHOWLOOT                           = 865, // reserved
     RBAC_PERM_COMMAND_LIST_SPAWNPOINTS                       = 866, // reserved
-    RBAC_PERM_COMMAND_MODIFY_POWER                           = 867,
+    RBAC_PERM_COMMAND_RELOAD_QUEST_GREETING_LOCALE           = 867, // reserved
+    RBAC_PERM_COMMAND_MODIFY_POWER                           = 868,
+    RBAC_PERM_COMMAND_DEBUG_SEND_PLAYER_CHOICE               = 869,
+    RBAC_PERM_COMMAND_DEBUG_THREATINFO                       = 870, // reserved
+    RBAC_PERM_COMMAND_DEBUG_INSTANCESPAWN                    = 871, // reserved
+    RBAC_PERM_COMMAND_SERVER_DEBUG                           = 872,
+    //
+    // IF YOU ADD NEW PERMISSIONS, ADD THEM IN 3.3.5 BRANCH AS WELL!
+    //
     // custom permissions 1000+
     RBAC_PERM_COMMAND_ARES_ROLL = 1000,
     RBAC_PERM_COMMAND_ARES_VIEW = 1001,

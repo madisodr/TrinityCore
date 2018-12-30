@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: characters
 -- ------------------------------------------------------
--- Server version	5.7.14-log
+-- Server version	10.1.6-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -1087,6 +1087,33 @@ LOCK TABLES `character_pet_declinedname` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `character_pvp_talent`
+--
+
+DROP TABLE IF EXISTS `character_pvp_talent`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `character_pvp_talent` (
+  `guid` bigint(20) unsigned NOT NULL,
+  `talentId0` int(10) unsigned NOT NULL,
+  `talentId1` int(10) unsigned NOT NULL,
+  `talentId2` int(10) unsigned NOT NULL,
+  `talentId3` int(10) unsigned NOT NULL,
+  `talentGroup` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`guid`,`talentGroup`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `character_pvp_talent`
+--
+
+LOCK TABLES `character_pvp_talent` WRITE;
+/*!40000 ALTER TABLE `character_pvp_talent` DISABLE KEYS */;
+/*!40000 ALTER TABLE `character_pvp_talent` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `character_queststatus`
 --
 
@@ -1645,6 +1672,7 @@ CREATE TABLE `characters` (
   `customDisplay1` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `customDisplay2` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `customDisplay3` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `inventorySlots` tinyint(3) unsigned NOT NULL DEFAULT '16',
   `bankSlots` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `restState` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `playerFlags` int(10) unsigned NOT NULL DEFAULT '0',
@@ -1704,11 +1732,11 @@ CREATE TABLE `characters` (
   `deleteInfos_Account` int(10) unsigned DEFAULT NULL,
   `deleteInfos_Name` varchar(12) DEFAULT NULL,
   `deleteDate` int(10) unsigned DEFAULT NULL,
-  `honor` INT(10) unsigned NOT NULL DEFAULT '0',
-  `honorLevel` INT(10) unsigned NOT NULL DEFAULT '1',
-  `prestigeLevel` INT(10) unsigned NOT NULL DEFAULT '0',
-  `honorRestState` TINYINT unsigned NOT NULL DEFAULT '2',
-  `honorRestBonus` FLOAT NOT NULL DEFAULT '0',
+  `honor` int(10) unsigned NOT NULL DEFAULT '0',
+  `honorLevel` int(10) unsigned NOT NULL DEFAULT '1',
+  `honorRestState` tinyint(3) unsigned NOT NULL DEFAULT '2',
+  `honorRestBonus` float NOT NULL DEFAULT '0',
+  `lastLoginBuild` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`guid`),
   KEY `idx_account` (`account`),
   KEY `idx_online` (`online`),
@@ -2795,6 +2823,7 @@ CREATE TABLE `item_instance_artifact` (
   `itemGuid` bigint(20) unsigned NOT NULL,
   `xp` bigint(20) unsigned NOT NULL DEFAULT '0',
   `artifactAppearanceId` int(10) unsigned NOT NULL DEFAULT '0',
+  `artifactTierId` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`itemGuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3359,17 +3388,17 @@ CREATE TABLE `pvpstats_players` (
   `battleground_id` bigint(20) unsigned NOT NULL,
   `character_guid` bigint(20) unsigned NOT NULL,
   `winner` bit(1) NOT NULL,
-  `score_killing_blows` mediumint(8) unsigned NOT NULL,
-  `score_deaths` mediumint(8) unsigned NOT NULL,
-  `score_honorable_kills` mediumint(8) unsigned NOT NULL,
-  `score_bonus_honor` mediumint(8) unsigned NOT NULL,
-  `score_damage_done` mediumint(8) unsigned NOT NULL,
-  `score_healing_done` mediumint(8) unsigned NOT NULL,
-  `attr_1` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `attr_2` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `attr_3` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `attr_4` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `attr_5` mediumint(8) unsigned NOT NULL DEFAULT '0',
+  `score_killing_blows` int(10) unsigned NOT NULL,
+  `score_deaths` int(10) unsigned NOT NULL,
+  `score_honorable_kills` int(10) unsigned NOT NULL,
+  `score_bonus_honor` int(10) unsigned NOT NULL,
+  `score_damage_done` int(10) unsigned NOT NULL,
+  `score_healing_done` int(10) unsigned NOT NULL,
+  `attr_1` int(10) unsigned NOT NULL DEFAULT '0',
+  `attr_2` int(10) unsigned NOT NULL DEFAULT '0',
+  `attr_3` int(10) unsigned NOT NULL DEFAULT '0',
+  `attr_4` int(10) unsigned NOT NULL DEFAULT '0',
+  `attr_5` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`battleground_id`,`character_guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3525,14 +3554,24 @@ INSERT INTO `updates` VALUES
 ('2017_01_29_00_characters.sql','E7475DCC13A0910FF23BF0EFB731629950A73A0D','ARCHIVED','2017-01-29 15:00:00',0),
 ('2017_02_26_00_characters_2016_09_13_00_characters.sql','2EF7AD507D097ABC74FF1E98A65BEC03B12E51C6','ARCHIVED','2017-02-26 19:57:47',0),
 ('2017_04_15_00_characters.sql','F118BA33CD7DDF2EE5673C6749C2965EFFF53C23','ARCHIVED','2017-04-15 12:10:50',0),
-('2017_04_19_00_characters.sql','5A36FD9015ED024BC085F995F72DC81B47CD1093','RELEASED','2017-04-18 23:16:18',30),
-('2017_05_08_00_characters.sql','86B5603EEBE1DE0EA56DBB264257967CFE583F46','RELEASED','2017-05-08 23:54:40',0),
-('2017_05_14_00_characters.sql','3452261F366BFE76BB59C0AAA674FA1513042899','RELEASED','2017-05-14 17:29:04',0),
-('2017_05_24_00_characters.sql','02701BF57589CD41456A748AEF425CBB2D3E6AD7','RELEASED','2017-05-24 22:00:00',0),
-('2017_06_04_00_characters.sql','BC80D2B7515CC6E01701070D2DA466727F36DB5E','RELEASED','2017-06-04 14:43:26',0),
-('2017_08_20_00_characters.sql','8C5BBF6AEAA6C7DE2F40A7D3878C8187A4729F13','RELEASED','2017-08-20 17:00:00',0),
-('2017_08_20_01_characters.sql','2F50D5E6BF3888B8C5270D79228A1D0601FAFF1D','RELEASED','2017-08-20 17:52:21',0),
-('2017_10_29_00_characters.sql','356D6D1BD6EAD240BF44714B2D35F333','RELEASED','2017-04-19 00:07:40',25);
+('2017_04_19_00_characters.sql','5A36FD9015ED024BC085F995F72DC81B47CD1093','ARCHIVED','2017-04-18 23:16:18',30),
+('2017_05_08_00_characters.sql','86B5603EEBE1DE0EA56DBB264257967CFE583F46','ARCHIVED','2017-05-08 23:54:40',0),
+('2017_05_14_00_characters.sql','3452261F366BFE76BB59C0AAA674FA1513042899','ARCHIVED','2017-05-14 17:29:04',0),
+('2017_05_24_00_characters.sql','02701BF57589CD41456A748AEF425CBB2D3E6AD7','ARCHIVED','2017-05-24 22:00:00',0),
+('2017_06_04_00_characters.sql','BC80D2B7515CC6E01701070D2DA466727F36DB5E','ARCHIVED','2017-06-04 14:43:26',0),
+('2017_08_20_00_characters.sql','8C5BBF6AEAA6C7DE2F40A7D3878C8187A4729F13','ARCHIVED','2017-08-20 17:00:00',0),
+('2017_08_20_01_characters.sql','2F50D5E6BF3888B8C5270D79228A1D0601FAFF1D','ARCHIVED','2017-08-20 17:52:21',0),
+('2017_10_29_00_characters.sql','8CFC473E7E87E58C317A72016BF69E9050D3BC83','ARCHIVED','2017-04-19 00:07:40',25),
+('2018_02_03_00_characters.sql','73E9BFD848D7A22F2A7DD89CF64E30E3A8689512','ARCHIVED','2018-02-03 23:52:42',0),
+('2018_02_08_00_characters.sql','75FA162A9B85D678B26F972371265F1EC2C75187','ARCHIVED','2018-02-08 22:23:28',0),
+('2018_02_19_00_characters.sql','75A0FFAFD0633921708DB0F72F9CC9796ACB960B','RELEASED','2018-02-19 22:33:32',117),
+('2018_03_04_00_characters.sql','2A4CD2EE2547E718490706FADC78BF36F0DED8D6','RELEASED','2018-03-04 18:15:24',0),
+('2018_04_28_00_characters.sql','CBD0FDC0F32DE3F456F7CE3D9CAD6933CD6A50F5','RELEASED','2018-04-28 12:44:09',0),
+('2018_07_28_00_characters.sql','31F66AE7831251A8915625EC7F10FA138AB8B654','RELEASED','2018-07-28 18:30:19',0),
+('2018_07_31_00_characters.sql','7DA8D4A4534520B23E6F5BBD5B8EE205B799C798','RELEASED','2018-07-31 20:54:39',0),
+('2018_12_09_00_characters.sql','7FE9641C93ED762597C08F1E9B6649C9EC2F0E47','RELEASED','2018-09-18 23:34:29',0),
+('2018_12_09_01_characters.sql','C80B936AAD94C58A0F33382CED08CFB4E0B6AC34','RELEASED','2018-10-10 22:05:28',0),
+('2018_12_09_02_characters.sql','DBBA0C06985CE8AC4E6E7E94BD6B2673E9ADFAE2','RELEASED','2018-12-02 17:32:31',0);
 /*!40000 ALTER TABLE `updates` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3625,4 +3664,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-04-19  0:17:39
+-- Dump completed on 2018-02-19 22:43:09

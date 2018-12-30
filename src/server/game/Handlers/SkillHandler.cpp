@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -46,6 +46,30 @@ void WorldSession::HandleLearnTalentsOpcode(WorldPackets::Talent::LearnTalents& 
 
     if (learnTalentsFailed.Reason)
         SendPacket(learnTalentsFailed.Write());
+
+    if (anythingLearned)
+        _player->SendTalentsInfoData();
+}
+
+void WorldSession::HandleLearnPvpTalentsOpcode(WorldPackets::Talent::LearnPvpTalents& packet)
+{
+    WorldPackets::Talent::LearnPvpTalentsFailed learnPvpTalentsFailed;
+    bool anythingLearned = false;
+    for (WorldPackets::Talent::PvPTalent pvpTalent : packet.Talents)
+    {
+        if (TalentLearnResult result = _player->LearnPvpTalent(pvpTalent.PvPTalentID, pvpTalent.Slot, &learnPvpTalentsFailed.SpellID))
+        {
+            if (!learnPvpTalentsFailed.Reason)
+                learnPvpTalentsFailed.Reason = result;
+
+            learnPvpTalentsFailed.Talents.push_back(pvpTalent);
+        }
+        else
+            anythingLearned = true;
+    }
+
+    if (learnPvpTalentsFailed.Reason)
+        SendPacket(learnPvpTalentsFailed.Write());
 
     if (anythingLearned)
         _player->SendTalentsInfoData();
