@@ -1,4 +1,8 @@
-/* HyperionCore */
+/*
+ * Title: Apollo
+ * Desc: Custom talent and profession system
+ */
+
 #include "DatabaseEnv.h"
 #include "ScriptMgr.h"
 #include <vector>

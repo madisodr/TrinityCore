@@ -11,6 +11,8 @@
 
 const char* PEGASUS_SELECT_ENTRY = "SELECT entry, spawn_entry FROM pegasus";
 
+const char* PEGASUS_ERROR = "There is been a critical error. Please contact a GM immedietly.";
+
 enum GossipOptions {
     DISMISS,
     STAY,
@@ -54,6 +56,9 @@ class PegasusHandler : public PlayerScript {
     public:
         PegasusHandler() : PlayerScript( "pegasus_handler" ) {}
 
+        /*
+         * Removes any mounts the player might have had from the world.
+         */
         void UnsummonMountFromWorld(Player* player) {
             player->PlayerTalkClass->SendCloseGossip();
 
@@ -70,6 +75,9 @@ class PegasusHandler : public PlayerScript {
         void OnDismount(Player* player, uint32 entry) {
             // no duplicate mounts
             UnsummonMountFromWorld(player);
+            if (mounts.size() == 0 || mounts[entry] == NULL) {
+                ChatHandler(player->GetSession()).PSendSysMessage(PEGASUS_ERROR);
+            }
 
             TempSummon* summon = player->SummonCreature(mounts[entry], player->GetPositionX() + 5, player->GetPositionY() + 5, player->GetPositionZ() + 1);
             player->SetPegasusMount(summon);
@@ -100,10 +108,11 @@ class PegasusGossip : public CreatureScript {
         }
 
         bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) {
-            ClearGossipMenuFor(player);
-            if(player->GetPegasusMount() == NULL) {
+            if(if !player || !creature || player->GetPegasusMount() == NULL) {
                 return false;
             }
+
+            ClearGossipMenuFor(player);
 
             switch(action) {
                 case DISMISS:
