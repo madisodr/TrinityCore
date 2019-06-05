@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -125,8 +125,8 @@ bool AreaTrigger::Create(uint32 spellMiscId, Unit* caster, Unit* target, SpellIn
     SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, GetMiscTemplate()->DecalPropertiesId);
 
     for (uint8 scaleCurveIndex = 0; scaleCurveIndex < MAX_AREATRIGGER_SCALE; ++scaleCurveIndex)
-        if (GetMiscTemplate()->ScaleInfo.ExtraScale[scaleCurveIndex].AsInt32)
-            SetUInt32Value(AREATRIGGER_EXTRA_SCALE_CURVE + scaleCurveIndex, GetMiscTemplate()->ScaleInfo.ExtraScale[scaleCurveIndex].AsInt32);
+        if (GetMiscTemplate()->ExtraScale.Data.Raw[scaleCurveIndex])
+            SetUInt32Value(AREATRIGGER_EXTRA_SCALE_CURVE + scaleCurveIndex, GetMiscTemplate()->ExtraScale.Data.Raw[scaleCurveIndex]);
 
     PhasingHandler::InheritPhaseShift(this, caster);
 
