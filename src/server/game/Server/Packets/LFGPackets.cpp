@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -37,7 +37,7 @@ void WorldPackets::LFG::DFProposalResponse::Read()
 {
     _worldPacket >> Ticket;
     _worldPacket >> InstanceID;
-    _worldPacket >> InstanceID;
+    _worldPacket >> ProposalID;
     Accepted = _worldPacket.ReadBit();
 }
 
@@ -311,10 +311,15 @@ WorldPacket const* WorldPackets::LFG::LFGQueueStatus::Write()
 
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::LFG::LFGPlayerRewards const& lfgPlayerRewards)
 {
-    data << int32(lfgPlayerRewards.RewardItem);
-    data << uint32(lfgPlayerRewards.RewardItemQuantity);
-    data << int32(lfgPlayerRewards.BonusCurrency);
-    data.WriteBit(lfgPlayerRewards.IsCurrency);
+    data.WriteBit(lfgPlayerRewards.RewardItem.is_initialized());
+    data.WriteBit(lfgPlayerRewards.RewardCurrency.is_initialized());
+    if (lfgPlayerRewards.RewardItem)
+        data << *lfgPlayerRewards.RewardItem;
+
+    data << uint32(lfgPlayerRewards.Quantity);
+    data << int32(lfgPlayerRewards.BonusQuantity);
+    if (lfgPlayerRewards.RewardCurrency)
+        data << int32(*lfgPlayerRewards.RewardCurrency);
 
     return data;
 }
@@ -378,6 +383,7 @@ WorldPacket const* WorldPackets::LFG::LFGProposalUpdate::Write()
     _worldPacket << uint32(Slot);
     _worldPacket << int8(State);
     _worldPacket << uint32(CompletedMask);
+    _worldPacket << uint32(EncounterMask);
     _worldPacket << uint32(Players.size());
     _worldPacket << uint8(Unused);
     _worldPacket.WriteBit(ValidCompletedMask);

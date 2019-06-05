@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -27,6 +27,7 @@ EndScriptData */
 #include "BattlefieldMgr.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
+#include "ChannelPackets.h"
 #include "Chat.h"
 #include "ChatPackets.h"
 #include "Conversation.h"
@@ -38,6 +39,7 @@ EndScriptData */
 #include "MapManager.h"
 #include "MovementPackets.h"
 #include "ObjectMgr.h"
+#include "PhasingHandler.h"
 #include "RBAC.h"
 #include "SpellPackets.h"
 #include "Transport.h"
@@ -71,6 +73,7 @@ public:
             { "sellerror",     rbac::RBAC_PERM_COMMAND_DEBUG_SEND_SELLERROR,     false, &HandleDebugSendSellErrorCommand,       "" },
             { "setphaseshift", rbac::RBAC_PERM_COMMAND_DEBUG_SEND_SETPHASESHIFT, false, &HandleDebugSendSetPhaseShiftCommand,   "" },
             { "spellfail",     rbac::RBAC_PERM_COMMAND_DEBUG_SEND_SPELLFAIL,     false, &HandleDebugSendSpellFailCommand,       "" },
+            { "playerchoice",  rbac::RBAC_PERM_COMMAND_DEBUG_SEND_PLAYER_CHOICE, false, &HandleDebugSendPlayerChoiceCommand,    "" },
         };
         static std::vector<ChatCommand> debugCommandTable =
         {
@@ -242,6 +245,18 @@ public:
         castFailed.FailedArg2 = failArg2;
         handler->GetSession()->SendPacket(castFailed.Write());
 
+        return true;
+    }
+
+    static bool HandleDebugSendPlayerChoiceCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        int32 choiceId = atoi(args);
+        Player* player = handler->GetSession()->GetPlayer();
+
+        player->SendPlayerChoice(player->GetGUID(), choiceId);
         return true;
     }
 
@@ -465,12 +480,10 @@ public:
         char const* name = "test";
         uint8 code = atoi(args);
 
-        WorldPacket data(SMSG_CHANNEL_NOTIFY, (1+10));
-        data << code;                                           // notify type
-        data << name;                                           // channel name
-        data << uint32(0);
-        data << uint32(0);
-        handler->GetSession()->SendPacket(&data);
+        WorldPackets::Channel::ChannelNotify channelNotify;
+        channelNotify.Type = code;
+        channelNotify._Channel = name;
+        handler->GetSession()->SendPacket(channelNotify.Write());
         return true;
     }
 
@@ -925,19 +938,16 @@ public:
         if (!ve)
             return false;
 
-        Creature* v = new Creature();
-
         Map* map = handler->GetSession()->GetPlayer()->GetMap();
+        Position pos = { x, y, z, o };
 
-        if (!v->Create(map->GenerateLowGuid<HighGuid::Vehicle>(), map, handler->GetSession()->GetPlayer()->GetPhaseMask(), entry, x, y, z, o, nullptr, id))
-        {
-            delete v;
+        Creature* v = Creature::CreateCreature(entry, map, pos, id);
+        if (!v)
             return false;
-        }
 
-        v->CopyPhaseFrom(handler->GetSession()->GetPlayer());
+        PhasingHandler::InheritPhaseShift(v, handler->GetSession()->GetPlayer());
 
-        map->AddToMap(v->ToCreature());
+        map->AddToMap(v);
 
         return true;
     }
@@ -964,22 +974,20 @@ public:
         if (!t)
             return false;
 
-        std::set<uint32> terrainswap;
-        std::set<uint32> phaseId;
-        std::set<uint32> worldMapSwap;
+        PhaseShift phaseShift;
 
         if (uint32 ut = (uint32)atoi(t))
-            terrainswap.insert(ut);
+            phaseShift.AddVisibleMapId(ut, nullptr);
 
         if (p)
             if (uint32 up = (uint32)atoi(p))
-                phaseId.insert(up);
+                phaseShift.AddPhase(up, PhaseFlags::None, nullptr);
 
         if (m)
             if (uint32 um = (uint32)atoi(m))
-                worldMapSwap.insert(um);
+                phaseShift.AddUiMapPhaseId(um);
 
-        handler->GetSession()->SendSetPhaseShift(phaseId, terrainswap, worldMapSwap);
+        PhasingHandler::SendToPlayer(handler->GetSession()->GetPlayer(), phaseShift);
         return true;
     }
 
@@ -1457,25 +1465,12 @@ public:
             return false;
         }
 
-        if (target->GetTypeId() == TYPEID_UNIT)
-        {
-            if (target->ToCreature()->GetDBPhase() > 0)
-                handler->PSendSysMessage("Target creature's PhaseId in DB: %d", target->ToCreature()->GetDBPhase());
-            else if (target->ToCreature()->GetDBPhase() < 0)
-                handler->PSendSysMessage("Target creature's PhaseGroup in DB: %d", abs(target->ToCreature()->GetDBPhase()));
-        }
+        if (target->GetDBPhase() > 0)
+            handler->PSendSysMessage("Target creature's PhaseId in DB: %d", target->GetDBPhase());
+        else if (target->GetDBPhase() < 0)
+            handler->PSendSysMessage("Target creature's PhaseGroup in DB: %d", abs(target->GetDBPhase()));
 
-        std::stringstream phases;
-
-        for (uint32 phase : target->GetPhases())
-        {
-            phases << phase << " ";
-        }
-
-        if (!phases.str().empty())
-            handler->PSendSysMessage("Target's current phases: %s", phases.str().c_str());
-        else
-            handler->SendSysMessage("Target is not phased");
+        PhasingHandler::PrintToChat(handler, target->GetPhaseShift());
         return true;
     }
 
@@ -1519,7 +1514,7 @@ public:
                 if (Battlefield* bf = sBattlefieldMgr->GetBattlefieldToZoneId(player->GetZoneId()))
                     nearestLoc = bf->GetClosestGraveYard(player);
                 else
-                    nearestLoc = sObjectMgr->GetClosestGraveYard(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetMapId(), player->GetTeam());
+                    nearestLoc = sObjectMgr->GetClosestGraveYard(*player, player->GetTeam(), player);
             }
         }
         else

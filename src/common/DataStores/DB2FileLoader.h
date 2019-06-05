@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -39,13 +39,26 @@ struct DB2Header
     uint32 MinId;
     uint32 MaxId;
     uint32 Locale;
-    uint32 CopyTableSize;
     uint16 Flags;
     int16 IndexField;
     uint32 TotalFieldCount;
+    uint32 PackedDataOffset;
+    uint32 ParentLookupCount;
+    uint32 ColumnMetaSize;
     uint32 CommonDataSize;
+    uint32 PalletDataSize;
+    uint32 SectionCount;
 };
 #pragma pack(pop)
+
+struct TC_COMMON_API DB2FieldMeta
+{
+    DB2FieldMeta(bool isSigned, DBCFormer type, char const* name);
+
+    bool IsSigned;
+    DBCFormer Type;
+    char const* Name;
+};
 
 struct TC_COMMON_API DB2FileLoadInfo
 {
@@ -65,16 +78,20 @@ struct TC_COMMON_API DB2FileSource
 {
     virtual ~DB2FileSource();
 
-    ///
-    /**
-     * Returns true when the source is open for reading
-     */
+    // Returns true when the source is open for reading
     virtual bool IsOpen() const = 0;
 
     // Reads numBytes bytes from source and places them into buffer
-    // Retu
+    // Returns true if numBytes was read successfully
     virtual bool Read(void* buffer, std::size_t numBytes) = 0;
+
+    // Returns current read position in file
     virtual std::size_t GetPosition() const = 0;
+
+    virtual bool SetPosition(std::size_t position) = 0;
+
+    virtual std::size_t GetFileSize() const = 0;
+
     virtual char const* GetFileName() const = 0;
 };
 
@@ -96,6 +113,8 @@ public:
     uint32 GetUInt32(char const* fieldName) const;
     int32 GetInt32(uint32 field, uint32 arrayIndex) const;
     int32 GetInt32(char const* fieldName) const;
+    uint64 GetUInt64(uint32 field, uint32 arrayIndex) const;
+    uint64 GetUInt64(char const* fieldName) const;
     float GetFloat(uint32 field, uint32 arrayIndex) const;
     float GetFloat(char const* fieldName) const;
     char const* GetString(uint32 field, uint32 arrayIndex) const;
@@ -129,7 +148,7 @@ public:
 
     bool Load(DB2FileSource* source, DB2FileLoadInfo const* loadInfo);
     char* AutoProduceData(uint32& count, char**& indexTable, std::vector<char*>& stringPool);
-    char* AutoProduceStrings(char* dataTable, uint32 locale);
+    char* AutoProduceStrings(char** indexTable, uint32 indexTableSize, uint32 locale);
     void AutoProduceRecordCopies(uint32 records, char** indexTable, char* dataTable);
 
     uint32 GetCols() const { return _header.TotalFieldCount; }

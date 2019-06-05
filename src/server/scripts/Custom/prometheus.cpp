@@ -13,8 +13,8 @@ const char* PROMETHEUS_INSERT_NEW_CHAR = "INSERT INTO prometheus VALUES ('%u', '
 
 // We use this enough. Predefine it.
 const float PI_OVER_2 = 1.57079632679;
-const double MIN_HEIGHT_PRO = 0.2f;
-const double MAX_HEIGHT_PRO = 2.0f;
+const float MIN_HEIGHT_PRO = 0.2f;
+const float MAX_HEIGHT_PRO = 2.0f;
 
 enum Prometheus_Flags {
 	NONE = 0x00000000,

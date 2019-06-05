@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -112,6 +112,7 @@ enum CharacterDatabaseStatements : uint32
     CHAR_SEL_CHARACTER_BGDATA,
     CHAR_SEL_CHARACTER_GLYPHS,
     CHAR_SEL_CHARACTER_TALENTS,
+    CHAR_SEL_CHARACTER_PVP_TALENTS,
     CHAR_SEL_CHARACTER_SKILLS,
     CHAR_SEL_CHARACTER_RANDOMBG,
     CHAR_SEL_CHARACTER_BANNED,
@@ -164,6 +165,7 @@ enum CharacterDatabaseStatements : uint32
     CHAR_DEL_GIFT,
     CHAR_SEL_CHARACTER_GIFT_BY_ITEM,
     CHAR_SEL_ACCOUNT_BY_NAME,
+    CHAR_UPD_ACCOUNT_BY_GUID,
     CHAR_DEL_ACCOUNT_INSTANCE_LOCK_TIMES,
     CHAR_INS_ACCOUNT_INSTANCE_LOCK_TIMES,
     CHAR_SEL_MATCH_MAKER_RATING,
@@ -491,6 +493,7 @@ enum CharacterDatabaseStatements : uint32
     CHAR_DEL_GUILD_BANK_EVENTLOG_BY_PLAYER,
     CHAR_DEL_CHAR_GLYPHS,
     CHAR_DEL_CHAR_TALENT,
+    CHAR_DEL_CHAR_PVP_TALENT,
     CHAR_DEL_CHAR_SKILLS,
     CHAR_UPD_CHAR_MONEY,
     CHAR_INS_CHAR_ACTION,
@@ -521,6 +524,7 @@ enum CharacterDatabaseStatements : uint32
     CHAR_DEL_PETITION_SIGNATURE_BY_OWNER,
     CHAR_INS_CHAR_GLYPHS,
     CHAR_INS_CHAR_TALENT,
+    CHAR_INS_CHAR_PVP_TALENT,
     CHAR_UPD_CHAR_LIST_SLOT,
     CHAR_INS_CHAR_FISHINGSTEPS,
     CHAR_DEL_CHAR_FISHINGSTEPS,

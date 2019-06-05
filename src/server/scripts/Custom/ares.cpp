@@ -1,4 +1,11 @@
-/* HyperionCore */
+/*
+ * Ares
+ * This script provides players access to D&D like character stats.
+ *
+ * TODO: Load the stats into memory versus keeping them in the database.
+ * This can be done either by keeping a huge map here OR storing them with the Player object
+ */
+
 #include "Chat.h"
 #include "DatabaseEnv.h"
 #include "Player.h"
@@ -8,6 +15,9 @@
 
 using namespace std;
 
+typedef vector<int> AresStats;
+
+// List of potential modifiers. Maybe generate these from a database.
 static const vector<string> modifierList = {"str", "dex", "con", "int", "wis", "cha"};
 
 enum MODS {
@@ -20,6 +30,7 @@ enum MODS {
     STAT_MAX,
 };
 
+/* SQL Queries */
 const char* ARES_NO_MODIFIERS_MSG = "We were unable to find any modifiers for your character. Please report this error to a GM or on the forums.";
 const char* ARES_USING_BASE_MODIFIERS_MSG = "Using default modifiers. Visit our web portal and go to your character sheet in order to populate your modifiers with proper stats.";
 const char* ARES_SELECT_STAT_QUERY = "SELECT %s FROM ares_modifiers WHERE guid='%u'";
@@ -28,43 +39,52 @@ const char* ARES_SELECT_BASE_RACIAL = "SELECT * FROM ares_base_racial WHERE race
 const char* ARES_SELECT_BASE_CLASS = "SELECT * FROM ares_base_class WHERE class = '%u'";
 const char* ARES_NEW = "INSERT INTO ares_modifiers VALUES('%u', '%u', '%u', '%u', '%u', '%u', '%u')";
 
+/* System Messages */
 const char* ARES_NAME_MSG = "Player: %s";
-const char* ARES_STR_MSG = "Str: %u";
-const char* ARES_DEX_MSG = "Dex: %u";
-const char* ARES_CON_MSG = "Con: %u";
-const char* ARES_ITN_MSG = "Int: %u";
-const char* ARES_WIS_MSG = "Wis: %u";
-const char* ARES_CHA_MSG = "Cha: %u";
-typedef vector<int> AresStats;
+const char* ARES_STAT_MSG = "%s: %u";
 
+
+/* AresPlayerScript */
 class AresPlayerScript : public PlayerScript {
     public:
+
+        /* Default Constructor */
         AresPlayerScript() : PlayerScript( "AresPlayerScript" ) {}
+
+        /*
+         * When a new character is created, generate the base stats for that characters race + class combo and save it
+         * to the database.
+         */
         void OnCreate(Player* player) {
             AresStats mods = {0, 0, 0, 0, 0, 0};
             LoadBaseStats(player->getRace(), player->getClass(), mods);
             CharacterDatabase.DirectPExecute(ARES_NEW, player->GetGUID().GetCounter(), mods[STR], mods[DEX], mods[CON], mods[ITN], mods[WIS], mods[CHA]);
         }
 
+        /*
+         * Loads the base stats for a race and class combo, returning them added together in an array.
+         */
         void LoadBaseStats(uint32 Race, uint32 Class, AresStats& mods) {
             Field* fields;
             QueryResult result = CharacterDatabase.PQuery(ARES_SELECT_BASE_RACIAL, Race);
             if (result) {
                 fields = result->Fetch();
-                for(int i = 0; i < STAT_MAX; i++)
+                for(int i = 0; i < STAT_MAX; i++) {
                     mods[i] += fields[i].GetUInt32();
+                }
             }
 
             result = CharacterDatabase.PQuery(ARES_SELECT_BASE_CLASS, Class);
             if (result) {
                 fields = result->Fetch();
-                for(int i = 0; i < STAT_MAX; i++)
+                for(int i = 0; i < STAT_MAX; i++) {
                     mods[i] += fields[i].GetUInt32();
+                }
             }
         }
 };
 
-
+/* AresCommandScript */
 class AresCommandScript : public CommandScript {
     public:
         AresCommandScript() : CommandScript( "AresCommandScript" ) {}
@@ -78,6 +98,9 @@ class AresCommandScript : public CommandScript {
             return commandTable;
         }
 
+        /*
+         * Displays the stats of a player to the caller
+         */
         static bool HandleViewCommand(ChatHandler* handler, const char* args) {
             Player* target;
             ObjectGuid targetGuid;
@@ -97,12 +120,12 @@ class AresCommandScript : public CommandScript {
                 for(int i = 0; i < STAT_MAX; i++)
                     mods[i] = field[i].GetUInt32();
 
-                ChatHandler(player->GetSession()).PSendSysMessage(ARES_STR_MSG, mods[STR]);
-                ChatHandler(player->GetSession()).PSendSysMessage(ARES_DEX_MSG, mods[DEX]);
-                ChatHandler(player->GetSession()).PSendSysMessage(ARES_CON_MSG, mods[CON]);
-                ChatHandler(player->GetSession()).PSendSysMessage(ARES_ITN_MSG, mods[ITN]);
-                ChatHandler(player->GetSession()).PSendSysMessage(ARES_WIS_MSG, mods[WIS]);
-                ChatHandler(player->GetSession()).PSendSysMessage(ARES_CHA_MSG, mods[CHA]);
+                ChatHandler(player->GetSession()).PSendSysMessage(ARES_STAT_MSG, "Str", mods[STR]);
+                ChatHandler(player->GetSession()).PSendSysMessage(ARES_STAT_MSG, "Dex", mods[DEX]);
+                ChatHandler(player->GetSession()).PSendSysMessage(ARES_STAT_MSG, "Con", mods[CON]);
+                ChatHandler(player->GetSession()).PSendSysMessage(ARES_STAT_MSG, "Int", mods[INT]);
+                ChatHandler(player->GetSession()).PSendSysMessage(ARES_STAT_MSG, "Wis", mods[WIS]);
+                ChatHandler(player->GetSession()).PSendSysMessage(ARES_STAT_MSG, "Cha", mods[CHA]);
             } else {
                 ChatHandler(player->GetSession()).SendSysMessage(ARES_NO_MODIFIERS_MSG);
             }
@@ -110,6 +133,9 @@ class AresCommandScript : public CommandScript {
             return true;
         }
 
+        /*
+         * Rolls a dice for a stat, with a dice type, and a mod.
+         */
         static bool HandleRollCommand(ChatHandler* handler, const char* args) {
             if (!*args)
                 return false;
@@ -123,6 +149,7 @@ class AresCommandScript : public CommandScript {
 
             // defaults to 20
             uint32 dice = (c_dice) ? atoi(c_dice) : 20;
+
             // if unspecificed, additional modifiers = 0
             uint8 mod = (c_mod) ? atoi(c_mod) : 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2017 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,6 +24,8 @@
 #include "Object.h"
 #include "SpellAuraDefines.h"
 
+#include <boost/container/flat_set.hpp>
+
 class Unit;
 class Player;
 class Item;
@@ -36,6 +38,7 @@ struct SpellChainNode;
 struct SpellModifier;
 struct SpellTargetPosition;
 struct Condition;
+enum WeaponAttackType : uint8;
 
 enum SpellCastTargetFlags : uint32
 {
@@ -222,7 +225,7 @@ enum SpellAuraInterruptFlags : uint32
     AURA_INTERRUPT_FLAG_CAST                = 0x00000004,   // 2    cast any spells
     AURA_INTERRUPT_FLAG_MOVE                = 0x00000008,   // 3    removed by any movement
     AURA_INTERRUPT_FLAG_TURNING             = 0x00000010,   // 4    removed by any turning
-    AURA_INTERRUPT_FLAG_JUMP                = 0x00000020,   // 5    removed by entering combat
+    AURA_INTERRUPT_FLAG_JUMP                = 0x00000020,   // 5    removed by jumping
     AURA_INTERRUPT_FLAG_NOT_MOUNTED         = 0x00000040,   // 6    removed by dismounting
     AURA_INTERRUPT_FLAG_NOT_ABOVEWATER      = 0x00000080,   // 7    removed by entering water
     AURA_INTERRUPT_FLAG_NOT_UNDERWATER      = 0x00000100,   // 8    removed by leaving water
@@ -300,6 +303,18 @@ private:
     static StaticData _data[TOTAL_SPELL_TARGETS];
 };
 
+struct TC_GAME_API ImmunityInfo
+{
+    uint32 SchoolImmuneMask = 0;
+    uint32 ApplyHarmfulAuraImmuneMask = 0;
+    uint32 MechanicImmuneMask = 0;
+    uint32 DispelImmune = 0;
+    uint32 DamageSchoolMask = 0;
+
+    boost::container::flat_set<AuraType> AuraTypeImmune;
+    boost::container::flat_set<SpellEffectName> SpellEffectImmune;
+};
+
 class TC_GAME_API SpellEffectInfo
 {
     SpellInfo const* _spellInfo;
@@ -308,7 +323,6 @@ public:
     uint32    Effect;
     uint32    ApplyAuraName;
     uint32    ApplyAuraPeriod;
-    int32     DieSides;
     float     RealPointsPerLevel;
     int32     BasePoints;
     float     PointsPerResource;
@@ -337,11 +351,11 @@ public:
         float ResourceCoefficient;
     } Scaling;
 
-    SpellEffectInfo() : _spellInfo(NULL), EffectIndex(0), Effect(0), ApplyAuraName(0), ApplyAuraPeriod(0), DieSides(0),
+    SpellEffectInfo() : _spellInfo(NULL), EffectIndex(0), Effect(0), ApplyAuraName(0), ApplyAuraPeriod(0),
                         RealPointsPerLevel(0), BasePoints(0), PointsPerResource(0), Amplitude(0), ChainAmplitude(0),
                         BonusCoefficient(0), MiscValue(0), MiscValueB(0), Mechanic(MECHANIC_NONE), PositionFacing(0),
                         RadiusEntry(NULL), ChainTargets(0), ItemType(0), TriggerSpell(0), BonusCoefficientFromAP(0.0f), ImplicitTargetConditions(NULL) { }
-    SpellEffectInfo(SpellEffectScalingEntry const* spellEffectScaling, SpellInfo const* spellInfo, uint8 effIndex, SpellEffectEntry const* effect);
+    SpellEffectInfo(SpellInfo const* spellInfo, uint8 effIndex, SpellEffectEntry const* effect);
 
     bool IsEffect() const;
     bool IsEffect(SpellEffectName effectName) const;
@@ -354,7 +368,7 @@ public:
     bool IsUnitOwnedAuraEffect() const;
 
     int32 CalcValue(Unit const* caster = nullptr, int32 const* basePoints = nullptr, Unit const* target = nullptr, float* variance = nullptr, int32 itemLevel = -1) const;
-    int32 CalcBaseValue(int32 value) const;
+    int32 CalcBaseValue(Unit const* caster, Unit const* target, int32 itemLevel) const;
     float CalcValueMultiplier(Unit* caster, Spell* spell = NULL) const;
     float CalcDamageMultiplier(Unit* caster, Spell* spell = NULL) const;
 
@@ -367,6 +381,9 @@ public:
 
     SpellEffectImplicitTargetTypes GetImplicitTargetType() const;
     SpellTargetObjectTypes GetUsedTargetObjectType() const;
+    ExpectedStatType GetScalingExpectedStat() const;
+
+    ImmunityInfo const* GetImmunityInfo() const { return &_immunityInfo; }
 
 private:
     struct StaticData
@@ -375,6 +392,8 @@ private:
         SpellTargetObjectTypes UsedTargetObjectType; // defines valid target object type for spell effect
     };
     static StaticData _data[TOTAL_SPELL_EFFECTS];
+
+    ImmunityInfo _immunityInfo;
 };
 
 typedef std::vector<SpellEffectInfo const*> SpellEffectInfoVector;
@@ -499,8 +518,7 @@ class TC_GAME_API SpellInfo
         uint32 ExplicitTargetMask;
         SpellChainNode const* ChainEntry;
 
-        SpellInfo(SpellInfoLoadHelper const& data, SpellEffectEntryMap const& effectsMap, SpellVisualMap&& visuals,
-            std::unordered_map<uint32, SpellEffectScalingEntry const*> const& effectScaling);
+        SpellInfo(SpellInfoLoadHelper const& data, SpellEffectEntryMap const& effectsMap, SpellVisualMap&& visuals);
         ~SpellInfo();
 
         uint32 GetCategory() const;
@@ -509,6 +527,7 @@ class TC_GAME_API SpellInfo
         bool HasAura(uint32 difficulty, AuraType aura) const;
         bool HasAreaAuraEffect(uint32 difficulty) const;
         bool HasAreaAuraEffect() const;
+        bool HasOnlyDamageEffects() const;
 
         bool HasAttribute(SpellAttr0 attribute) const { return !!(Attributes & attribute); }
         bool HasAttribute(SpellAttr1 attribute) const { return !!(AttributesEx & attribute); }
@@ -560,19 +579,25 @@ class TC_GAME_API SpellInfo
         bool IsPositive() const;
         bool IsPositiveEffect(uint8 effIndex) const;
         bool IsChanneled() const;
+        bool IsMoveAllowedChannel() const;
         bool NeedsComboPoints() const;
+        bool IsNextMeleeSwingSpell() const;
         bool IsBreakingStealth() const;
         bool IsRangedWeaponSpell() const;
         bool IsAutoRepeatRangedSpell() const;
         bool HasInitialAggro() const;
+
+        WeaponAttackType GetAttackType() const;
+
+        bool IsItemFitToSpellRequirements(Item const* item) const;
 
         bool IsAffected(uint32 familyName, flag128 const& familyFlags) const;
 
         bool IsAffectedBySpellMods() const;
         bool IsAffectedBySpellMod(SpellModifier const* mod) const;
 
-        bool CanPierceImmuneAura(SpellInfo const* aura) const;
-        bool CanDispelAura(SpellInfo const* aura) const;
+        bool CanPierceImmuneAura(SpellInfo const* auraSpellInfo) const;
+        bool CanDispelAura(SpellInfo const* auraSpellInfo) const;
 
         bool IsSingleTarget() const;
         bool IsAuraExclusiveBySpecificWith(SpellInfo const* spellInfo) const;
@@ -638,6 +663,11 @@ class TC_GAME_API SpellInfo
         DiminishingLevels GetDiminishingReturnsMaxLevel() const;
         int32 GetDiminishingReturnsLimitDuration() const;
 
+        // spell immunities
+        void ApplyAllSpellImmunitiesTo(Unit* target, SpellEffectInfo const* effect, bool apply) const;
+        bool CanSpellProvideImmunityAgainstAura(SpellInfo const* auraSpellInfo) const;
+        bool SpellCancelsAuraEffect(AuraEffect const* aurEff) const;
+
     private:
         // loading helpers
         void _InitializeExplicitTargetMask();
@@ -647,6 +677,7 @@ class TC_GAME_API SpellInfo
         void _LoadSpellSpecific();
         void _LoadAuraState();
         void _LoadSpellDiminishInfo();
+        void _LoadImmunityInfo();
 
         // unloading helpers
         void _UnloadImplicitTargetConditionLists();
