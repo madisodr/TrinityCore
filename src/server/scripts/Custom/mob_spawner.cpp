@@ -150,7 +150,7 @@ namespace Hyperion {
 
                     float pointX = me->GetPositionX() + (dist * cos(angle * PI_DIV));
                     float pointY = me->GetPositionY() + (dist * sin(angle * PI_DIV));
-                    float pointZ = me->GetMap()->GetHeight(pointX, pointY, me->GetPositionZ());
+                    float pointZ = me->GetMap()->GetHeight(me->GetPhaseShift(), pointX, pointY, me->GetPositionZ());
 
                     Creature* t = me->SummonCreature(ZOMBIE, pointX, pointY, pointZ, angle, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, WAVE_TIMER * 10000);
                     Infected* infected = new Infected(t);

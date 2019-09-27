@@ -130,22 +130,23 @@ class AthenaPlacement : public SpellScriptLoader {
                 if (!sObjectMgr->GetCreatureTemplate(entry))
                     return;
 
-                Creature* creature = new Creature();
-                if (!creature->Create(map->GenerateLowGuid<HighGuid::Creature>(), map, player->GetPhaseMask(), entry, x, y, z, o)) {
+                Creature* creature = Creature::CreateCreature(entry, map, chr->GetPosition());
+                if (!creature()) {
                     delete creature;
                     return;
                 }
 
-                creature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), player->GetPhaseMask());
+                PhasingHandler::InheritPhaseShift(creature, player);
+
+                creature->SaveToDB(map->GetId(), {map->GetDifficultyID() });
 
                 ObjectGuid::LowType db_guid = creature->GetSpawnId();
                 creature->CleanupsBeforeDelete();
                 delete creature;
-                creature = new Creature();
-                if (!creature->LoadCreatureFromDB(db_guid, map)) {
-                    delete creature;
+
+                creature = Creature::CreateCreatureFromDB(db_guid, map);
+                if (!creature)
                     return;
-                }
 
                 sObjectMgr->AddCreatureToGrid(db_guid, sObjectMgr->GetCreatureData(db_guid));
             }
